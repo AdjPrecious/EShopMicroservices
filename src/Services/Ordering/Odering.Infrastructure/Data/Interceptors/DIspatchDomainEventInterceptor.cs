@@ -22,7 +22,7 @@ namespace Ordering.Infrastructure.Data.Interceptors
         {
             if (context == null) return;
             
-            var aggregates = context.ChangeTracker.Entries<IAggregate>().Where(e => e.Entity.DomainEvents.Any()).Select(a => a.Entity);
+            var aggregates = context.ChangeTracker.Entries<IAggregate>().Where(a => a.Entity.DomainEvents.Any()).Select(a => a.Entity);
 
             var domainEvents = aggregates.SelectMany(a => a.DomainEvents).ToList();
 
