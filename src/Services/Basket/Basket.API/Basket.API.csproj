@@ -16,7 +16,7 @@
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageReference Include="Carter" Version="8.2.1" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.49.0" />
-    <PackageReference Include="Marten" Version="7.40.0" />
+    <PackageReference Include="Marten" Version="8.37.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
