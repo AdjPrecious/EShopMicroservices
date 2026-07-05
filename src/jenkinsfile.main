@@ -1,0 +1,126 @@
+_pipeline{
+    agent any
+
+    when{
+        branch 'main'
+    }
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        GITHUB_CREDENTIALS = credentials('github-credentials')
+        DOCKERHUB_USER = "${DOCKERHUB_CREDENTIALS_USR}"
+        MANIFEST_REPO = "https://github.com/AdjPrecious/EShop-K8s-Manifest.git"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+
+    }
+
+    stages{
+        stage('Checkout app code'){
+            checkout scm
+            echo "Main branch build #${IMAGE_TAG} — this will deploy to the cluster via ArgoCD"
+        }
+
+         stage('Install Trivy') {
+            steps {
+                sh '''
+                    if ! command -v trivy &> /dev/null; then
+                        echo "Installing Trivy..."
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                    else
+                        echo "Trivy already installed: $(trivy --version)"
+                    fi
+                '''
+            }
+        }
+
+
+        stage('Build, Scan & push Docker image'){
+            
+            steps{
+                script{
+                    def services = [name: 'catalog-api', service: 'src\Services\Catalog\CatalogAPI\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\CatalogApi'],
+                                   [name: 'basket-api', service: 'src\Services\Basket\Basket.API\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\BasketApi'],
+                                   [name: 'discount-grpc', service: 'src\Services\Discount\Discount.Grpc\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Discount-Grpc'],
+                                   [name: 'ordering-api', service: 'src\Services\Ordering\Odering.API\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\OrderingApi'],
+                                   [name: 'yarpapigateway', service: 'src\ApiGateways\YarpApiGateway\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Yarpapigateway'],
+                                   [name: 'shopping-web', service: 'src\WebApps\Shopping-Web\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Shopping-WebApp']
+
+                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_USER} --password-stdin"
+
+                    for(svc in services){
+                        def fullTag = "${DOCKERHUB_USER}/${svc.name}:${IMAGE_TAG}"
+
+                        echo "=== Building ${svc.name}.... ===="
+                        sh "docker build -f ${svc.service} -t ${fullTag} ."
+
+                        echo "=== Scanning $[svc.name] with Trivy ==="
+                        sh """
+                           trivy image \
+                             --exit-code 1 \
+                             --severity HIGH \
+                             --no-progress \
+                             --format table \
+                             ${fullTag}
+
+                        """
+
+                        echo "=== Pushing ${svc.name}.... ==="
+                        sh "docker push ${fullTag}"
+
+                        echo "Clearing disk space by removing image...."
+                        sh "docker image prune -f"
+                    }
+                }
+            }
+        }
+
+        stage('Update Kubernetes manifests'){
+            steps{
+                script{
+                    def services = [name: 'catalog-api', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\CatalogApi'],
+                                   [name: 'basket-api', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\BasketApi'],
+                                   [name: 'discount-grpc', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Discount-Grpc'],
+                                   [name: 'ordering-api', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\OrderingApi'],
+                                   [name: 'yarpapigateway', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\YarpApiGateway'],
+                                   [name: 'shopping-web', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Shopping-WebApp']  
+
+                    sh "rm -rf EShop-K8s-Manifest"
+
+                    sh "git clone https://${GITHUB_CREDENTIALS_USR}:${GITHUB_CREDENTIALS_PSW}@{MANIFESTS_REPO}"
+
+                    dir('Ehop-K8s-Manifest'){
+                        for(svc in services){
+                           echo "Updating manifest for ${svc.name}...."
+                            sh "sed -i 's|image: ${DOCKERHUB_USER}/${svc.name}:.*|image: ${DOCKERHUB_USER}/${svc.name}:${IMAGE_TAG}|' ${svc.manifestDir}/deployment.yaml"}
+
+                            sh """
+                                git config user.email 'jenkins@.local'
+                                git config user.name 'Jenkins CI'
+                                git add .
+                                git commit -m 'Update image tags to ${IMAGE_TAG}'
+                                git push origin main    
+                            """"
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+
+        post {
+                always{
+                    sh 'docker logout || true'
+
+                }
+
+                success{
+                    echo "Build ${IMAGE_TAG} passed Trivy scan, pushed all 6 images, and updated manifests. ArgoCD will deploy shortly."
+                }
+                failure{
+                    echo "Build FAILED. Manifests were NOT updated — cluster is still running the last good build. Check Trivy output or build logs above."
+                }
+ 
+   }
+}

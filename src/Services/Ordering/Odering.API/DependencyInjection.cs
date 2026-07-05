@@ -12,7 +12,7 @@ namespace Ordering.API
 
             services.AddExceptionHandler<CustomExceptionHandler>();
 
-            services.AddHealthChecks().AddSqlServer(configuration.GetConnectionString("Database")!);
+            services.AddHealthChecks().AddSqlServer(configuration.GetConnectionString("Database")!, tags: new[] { "ready" });
 
             return services;
         }
@@ -21,6 +21,17 @@ namespace Ordering.API
         {
             app.MapCarter();
             app.UseExceptionHandler(Options => { });
+
+            app.MapHealthChecks("/health/live", new HealthCheckOptions
+            {
+                Predicate = _ => false
+            });
+
+            app.UseHealthChecks("/health/ready", new HealthCheckOptions
+            {
+                Predicate = r => r.Tags.Contains("ready"),
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            });
 
             app.UseHealthChecks("/health", new HealthCheckOptions
             {
