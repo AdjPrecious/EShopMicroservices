@@ -109,7 +109,11 @@ pipeline {
                             git commit -m 'Update image tags to ${IMAGE_TAG}'
                             git push origin main    
                         """
+
+                        
                     }
+                    sh 'docker logout || true'
+
                 }
             }
         }
@@ -117,21 +121,22 @@ pipeline {
     }
 
 
-        post {
-                always{
-                    node{
-                        sh 'docker logout || true'
-                    }
+    post {
+        always{
+
+           echo 'Pipeline finished'
                     
 
-                }
+        }
 
-                success{
-                    echo "Build ${IMAGE_TAG} passed Trivy scan, pushed all 6 images, and updated manifests. ArgoCD will deploy shortly."
-                }
-                failure{
-                    echo "Build FAILED. Manifests were NOT updated — cluster is still running the last good build. Check Trivy output or build logs above."
-                }
- 
-   }
+
+        success{
+            echo "Build ${IMAGE_TAG} passed Trivy scan, pushed all 6 images, and updated manifests. ArgoCD will deploy shortly."
+        }
+
+        failure{
+            echo "Build FAILED. Manifests were NOT updated — cluster is still running the last good build. Check Trivy output or build logs above."
+        }
+       
+    }
 }
