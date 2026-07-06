@@ -1,4 +1,4 @@
-_pipeline{
+pipeline{
     agent any
 
     when{
@@ -9,18 +9,21 @@ _pipeline{
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         GITHUB_CREDENTIALS = credentials('github-credentials')
         DOCKERHUB_USER = "${DOCKERHUB_CREDENTIALS_USR}"
-        MANIFEST_REPO = "https://github.com/AdjPrecious/EShop-K8s-Manifest.git"
+        MANIFEST_REPO = "github.com/AdjPrecious/EShop-K8s-Manifest.git"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
 
     }
 
     stages{
         stage('Checkout app code'){
-            checkout scm
-            echo "Main branch build #${IMAGE_TAG} — this will deploy to the cluster via ArgoCD"
+            steps{
+                checkout scm
+                echo "Main branch build #${IMAGE_TAG} — this will deploy to the cluster via ArgoCD"
+            }
+            
         }
 
-         stage('Install Trivy') {
+        stage('Install Trivy') {
             steps {
                 sh '''
                     if ! command -v trivy &> /dev/null; then
@@ -38,12 +41,15 @@ _pipeline{
             
             steps{
                 script{
-                    def services = [name: 'catalog-api', service: 'src/Services/Catalog/CatalogAPI/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/CatalogApi'],
-                                   [name: 'basket-api', service: 'src/Services/Basket/Basket.API/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/BasketApi'],
-                                   [name: 'discount-grpc', service: 'src/Services/Discount/Discount.Grpc/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Discount-Grpc'],
-                                   [name: 'ordering-api', service: 'src/Services/Ordering/Ordering.API/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/OrderingApi'],
-                                   [name: 'yarpapigateway', service: 'src/ApiGateways/YarpApiGateway/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Yarpapigateway'],
-                                   [name: 'shopping-web', service: 'src/WebApps/Shopping-Web/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Shopping-WebApp']
+                    def services = [
+                                    [name: 'catalogapi', dockerfile: 'src/Services/Catalog/CatalogAPI/Dockerfile', manifestDir: 'CatalogApi'],
+                                    [name: 'basketapi', dockerfile: 'src/Services/Basket/Basket.API/Dockerfile', manifestDir: 'BasketApi'],
+                                    [name: 'discountgrpc', dockerfile: 'src/Services/Discount/Discount.Grpc/Dockerfile', manifestDir: 'Discount-Grpc'],
+                                    [name: 'orderingapi', dockerfile: 'src/Services/Ordering/Ordering.API/Dockerfile', manifestDir: 'OrderingApi'],
+                                    [name: 'yarpapigateway', dockerfile: 'src/ApiGateways/YarpApiGateway/Dockerfile', manifestDir: 'Yarpapigateway'],
+                                    [name: 'shopping-webapp', dockerfile: 'src/WebApps/Shopping-Web/Dockerfile', manifestDir: 'Shopping-WebApp']
+                                   
+                    ]
 
                     sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_USER} --password-stdin"
 
@@ -51,9 +57,9 @@ _pipeline{
                         def fullTag = "${DOCKERHUB_USER}/${svc.name}:${IMAGE_TAG}"
 
                         echo "=== Building ${svc.name}.... ===="
-                        sh "docker build -f ${svc.service} -t ${fullTag} ."
+                        sh "docker build -f ${svc.dockerfile} -t ${fullTag} src"
 
-                        echo "=== Scanning $[svc.name] with Trivy ==="
+                        echo "=== Scanning ${svc.name} with Trivy ==="
                         sh """
                            trivy image \
                              --exit-code 1 \
@@ -77,30 +83,35 @@ _pipeline{
         stage('Update Kubernetes manifests'){
             steps{
                 script{
-                    def services = [name: 'catalog-api', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/CatalogApi'],
-                                   [name: 'basket-api', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/BasketApi'],
-                                   [name: 'discount-grpc', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Discount-Grpc'],
-                                   [name: 'ordering-api', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/OrderingApi'],
-                                   [name: 'yarpapigateway', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/YarpApiGateway'],
-                                   [name: 'shopping-web', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Shopping-WebApp']  
+
+                    def services = [
+                                    [name: 'catalogapi', manifestDir: 'CatalogApi'],
+                                    [name: 'basketapi', manifestDir: 'BasketApi'],
+                                    [name: 'discountgrpc', manifestDir: 'Discount-Grpc'],
+                                    [name: 'orderingapi', manifestDir: 'OrderingApi'],
+                                    [name: 'yarpapigateway', manifestDir: 'Yarpapigateway'],
+                                    [name: 'shopping-webapp', manifestDir: 'Shopping-WebApp']
+                                   
+                    ]
+
+                   
 
                     sh "rm -rf EShop-K8s-Manifest"
 
-                    sh "git clone https://${GITHUB_CREDENTIALS_USR}:${GITHUB_CREDENTIALS_PSW}@{MANIFESTS_REPO}"
+                    sh "git clone https://${GITHUB_CREDENTIALS_USR}:${GITHUB_CREDENTIALS_PSW}@${MANIFEST_REPO}"
 
-                    dir('Ehop-K8s-Manifest'){
+                    dir('EShop-K8s-Manifest/k8s-manifests'){
                         for(svc in services){
                            echo "Updating manifest for ${svc.name}...."
-                            sh "sed -i 's|image: ${DOCKERHUB_USER}/${svc.name}:.*|image: ${DOCKERHUB_USER}/${svc.name}:${IMAGE_TAG}|' ${svc.manifestDir}/deployment.yaml"}
-
-                            sh """
-                                git config user.email 'jenkins@.local'
-                                git config user.name 'Jenkins CI'
-                                git add .
-                                git commit -m 'Update image tags to ${IMAGE_TAG}'
-                                git push origin main    
-                            """"
+                            sh "sed -i 's|image: ${DOCKERHUB_USER}/${svc.name}:.*|image: ${DOCKERHUB_USER}/${svc.name}:${IMAGE_TAG}|' ${svc.manifestDir}/deployment.yaml"                 
                         }
+                        sh """
+                            git config user.email 'jenkins@.local'
+                            git config user.name 'Jenkins CI'
+                            git add .
+                            git commit -m 'Update image tags to ${IMAGE_TAG}'
+                            git push origin main    
+                        """
                     }
                 }
             }

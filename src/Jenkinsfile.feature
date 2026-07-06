@@ -1,4 +1,4 @@
-_pipeline{
+pipeline{
     agent any
 
     when{
@@ -37,40 +37,47 @@ _pipeline{
 
         stage('Build, Scan $ push'){
             steps{
-                def services = [
-                    [name: 'catalog-api', service: 'src/Services/Catalog/CatalogAPI/Dockerfile'],
-                                   [name: 'basket-api', dockerfile: 'src/Services/Basket/Basket.API/Dockerfile'],
-                                   [name: 'discount-grpc', dockerfile: 'src/Services/Discount/Discount.Grpc/Dockerfile'],
-                                   [name: 'ordering-api', dockerfile: 'src/Services/Ordering/Ordering.API/Dockerfile'],
+                script{
+                    def services = [
+                                   [name: 'catalogapi', dockerfile: 'src/Services/Catalog/CatalogAPI/Dockerfile'],
+                                   [name: 'basketapi', dockerfile: 'src/Services/Basket/Basket.API/Dockerfile'],
+                                   [name: 'discountgrpc', dockerfile: 'src/Services/Discount/Discount.Grpc/Dockerfile'],
+                                   [name: 'orderingapi', dockerfile: 'src/Services/Ordering/Ordering.API/Dockerfile'],
                                    [name: 'yarpapigateway', dockerfile: 'src/ApiGateways/YarpApiGateway/Dockerfile'],
-                                   [name: 'shopping-web', dockerfile: 'src/WebApps/Shopping-Web/Dockerfile']
+                                   [name: 'shopping-webapp', dockerfile: 'src/WebApps/Shopping-Web/Dockerfile']
                 ]
 
-                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
 
-                for(svc in Services){
-                    def fullTag = "${DOCKERHUB_USER}/${svc.name}:${BRANCH_TAG}"
+                    for(svc in services){
 
-                    echo "=== Building ${svc.name} ===="
-                    sh "docker build -f ${svc.dockerfile} -t ${fullTag} ."
+                        def fullTag = "${DOCKERHUB_USER}/${svc.name}:${BRANCH_TAG}"
 
-                    echo "==== Scanning ${svc.name} with Trivy ===="
+                        echo "=== Building ${svc.name} ===="
+                        sh "docker build -f ${svc.dockerfile} -t ${fullTag} src"
 
-                    sh """
-                      trivy image \
-                        --exit-code 1 \
-                        --severity MEDIUM \
-                        --no-progress \
-                        --format table \
-                        ${fullTag}
-                        """
+                        echo "==== Scanning ${svc.name} with Trivy ===="
 
-                    echo "=== Pushing ${svc.name} ==="
-                    sh "docker push ${fullTag}"
+                        sh """
+                        trivy image \
+                            --exit-code 1 \
+                            --severity MEDIUM \
+                            --no-progress \
+                            --format table \
+                            ${fullTag}
+                            """
 
-                    sh "docker image prune -f"
-                    
+                        echo "=== Pushing ${svc.name} ==="
+                        sh "docker push ${fullTag}"
+
+                        sh "docker image prune -f"
+                        
+                    }
+
                 }
+                
+
+                
             }
         }
     }
