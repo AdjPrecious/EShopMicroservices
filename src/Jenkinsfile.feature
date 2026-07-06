@@ -81,7 +81,10 @@ pipeline{
 
     post{
         always {
-            sh 'docker logout || true'
+            node{
+                sh 'docker logout || true'
+            }
+            
         }
         success{
             echo "feature branch ${env.BRANCH_NAME} passed Trivy scan. Image tagged: ${BRANCH_TAG}. Not deployed (featured branch)."

@@ -119,7 +119,10 @@ pipeline {
 
         post {
                 always{
-                    sh 'docker logout || true'
+                    node{
+                        sh 'docker logout || true'
+                    }
+                    
 
                 }
 
