@@ -1,9 +1,6 @@
 pipeline{
     agent any
 
-    when{
-        not {branch 'main'}
-    }
 
     environment{
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
