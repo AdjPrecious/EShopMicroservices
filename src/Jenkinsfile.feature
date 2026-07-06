@@ -38,12 +38,12 @@ _pipeline{
         stage('Build, Scan $ push'){
             steps{
                 def services = [
-                    [name: 'catalog-api', service: 'src\Services\Catalog\CatalogAPI\Dockerfile'],
-                                   [name: 'basket-api', dockerfile: 'src\Services\Basket\Basket.API\Dockerfile'],
-                                   [name: 'discount-grpc', dockerfile: 'src\Services\Discount\Discount.Grpc\Dockerfile'],
-                                   [name: 'ordering-api', dockerfile: 'src\Services\Ordering\Odering.API\Dockerfile'],
-                                   [name: 'yarpapigateway', dockerfile: 'src\ApiGateways\YarpApiGateway\Dockerfile'],
-                                   [name: 'shopping-web', dockerfile: 'src\WebApps\Shopping-Web\Dockerfile']
+                    [name: 'catalog-api', service: 'src/Services/Catalog/CatalogAPI/Dockerfile'],
+                                   [name: 'basket-api', dockerfile: 'src/Services/Basket/Basket.API/Dockerfile'],
+                                   [name: 'discount-grpc', dockerfile: 'src/Services/Discount/Discount.Grpc/Dockerfile'],
+                                   [name: 'ordering-api', dockerfile: 'src/Services/Ordering/Ordering.API/Dockerfile'],
+                                   [name: 'yarpapigateway', dockerfile: 'src/ApiGateways/YarpApiGateway/Dockerfile'],
+                                   [name: 'shopping-web', dockerfile: 'src/WebApps/Shopping-Web/Dockerfile']
                 ]
 
                 sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"

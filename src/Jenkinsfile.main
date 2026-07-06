@@ -38,12 +38,12 @@ _pipeline{
             
             steps{
                 script{
-                    def services = [name: 'catalog-api', service: 'src\Services\Catalog\CatalogAPI\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\CatalogApi'],
-                                   [name: 'basket-api', service: 'src\Services\Basket\Basket.API\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\BasketApi'],
-                                   [name: 'discount-grpc', service: 'src\Services\Discount\Discount.Grpc\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Discount-Grpc'],
-                                   [name: 'ordering-api', service: 'src\Services\Ordering\Odering.API\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\OrderingApi'],
-                                   [name: 'yarpapigateway', service: 'src\ApiGateways\YarpApiGateway\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Yarpapigateway'],
-                                   [name: 'shopping-web', service: 'src\WebApps\Shopping-Web\Dockerfile', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Shopping-WebApp']
+                    def services = [name: 'catalog-api', service: 'src/Services/Catalog/CatalogAPI/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/CatalogApi'],
+                                   [name: 'basket-api', service: 'src/Services/Basket/Basket.API/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/BasketApi'],
+                                   [name: 'discount-grpc', service: 'src/Services/Discount/Discount.Grpc/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Discount-Grpc'],
+                                   [name: 'ordering-api', service: 'src/Services/Ordering/Ordering.API/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/OrderingApi'],
+                                   [name: 'yarpapigateway', service: 'src/ApiGateways/YarpApiGateway/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Yarpapigateway'],
+                                   [name: 'shopping-web', service: 'src/WebApps/Shopping-Web/Dockerfile', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Shopping-WebApp']
 
                     sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_USER} --password-stdin"
 
@@ -77,12 +77,12 @@ _pipeline{
         stage('Update Kubernetes manifests'){
             steps{
                 script{
-                    def services = [name: 'catalog-api', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\CatalogApi'],
-                                   [name: 'basket-api', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\BasketApi'],
-                                   [name: 'discount-grpc', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Discount-Grpc'],
-                                   [name: 'ordering-api', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\OrderingApi'],
-                                   [name: 'yarpapigateway', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\YarpApiGateway'],
-                                   [name: 'shopping-web', manifestDir: 'EShop-K8s-Manifest\k8s-manifests\Shopping-WebApp']  
+                    def services = [name: 'catalog-api', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/CatalogApi'],
+                                   [name: 'basket-api', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/BasketApi'],
+                                   [name: 'discount-grpc', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Discount-Grpc'],
+                                   [name: 'ordering-api', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/OrderingApi'],
+                                   [name: 'yarpapigateway', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/YarpApiGateway'],
+                                   [name: 'shopping-web', manifestDir: 'EShop-K8s-Manifest/k8s-manifests/Shopping-WebApp']  
 
                     sh "rm -rf EShop-K8s-Manifest"
 
