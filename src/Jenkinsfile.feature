@@ -39,7 +39,7 @@ pipeline{
                                    [name: 'catalogapi', dockerfile: 'src/Services/Catalog/CatalogAPI/Dockerfile'],
                                    [name: 'basketapi', dockerfile: 'src/Services/Basket/Basket.API/Dockerfile'],
                                    [name: 'discountgrpc', dockerfile: 'src/Services/Discount/Discount.Grpc/Dockerfile'],
-                                   [name: 'orderingapi', dockerfile: 'src/Services/Ordering/Ordering.API/Dockerfile'],
+                                   [name: 'orderingapi', dockerfile: 'src/Services/Ordering/Odering.API/Dockerfile'],
                                    [name: 'yarpapigateway', dockerfile: 'src/ApiGateways/YarpApiGateway/Dockerfile'],
                                    [name: 'shopping-webapp', dockerfile: 'src/WebApps/Shopping-Web/Dockerfile']
                 ]
