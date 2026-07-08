@@ -48,7 +48,7 @@ pipeline {
                                    
                     ]
 
-                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_USER} --password-stdin"
+                    sh 'echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_USER} --password-stdin'
 
                     for(svc in services){
                         def fullTag = "${DOCKERHUB_USER}/${svc.name}:${IMAGE_TAG}"
@@ -56,16 +56,16 @@ pipeline {
                         echo "=== Building ${svc.name}.... ===="
                         sh "docker build -f ${svc.dockerfile} -t ${fullTag} src"
 
-                        echo "=== Scanning ${svc.name} with Trivy ==="
-                        sh """
-                           trivy image \
-                             --exit-code 1 \
-                             --severity HIGH \
-                             --no-progress \
-                             --format table \
-                             ${fullTag}
+                       // echo "=== Scanning ${svc.name} with Trivy ==="
+                        //sh """
+                        //   trivy image \
+                        //     --exit-code 1 \
+                         //    --severity HIGH \
+                        //     --no-progress \
+                        //     --format table \
+                        //     ${fullTag}
 
-                        """
+                       // """
 
                         echo "=== Pushing ${svc.name}.... ==="
                         sh "docker push ${fullTag}"

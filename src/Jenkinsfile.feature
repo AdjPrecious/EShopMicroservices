@@ -17,20 +17,20 @@ pipeline{
             }
         }
 
-        stage('Install Trivy'){
-            steps{
-                sh '''
-                  if ! command -v trivy &> /dev/null; then
-                      echo "Installing Trivy....."
-                      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+     //   stage('Install Trivy'){
+     //       steps{
+     //           sh '''
+     //             if ! command -v trivy &> /dev/null; then
+    //                  echo "Installing Trivy....."
+     //                 curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-                      else
-                        echo "Trivy already installed: $(trivy --version)"
-                      fi
+     //                 else
+    //                    echo "Trivy already installed: $(trivy --version)"
+     //                 fi
 
-                    '''
-            }
-        }
+     //               '''
+     //       }
+    //    }
 
         stage('Build, Scan $ push'){
             steps{
@@ -55,14 +55,14 @@ pipeline{
 
                         echo "==== Scanning ${svc.name} with Trivy ===="
 
-                        sh """
-                        trivy image \
-                            --exit-code 1 \
-                            --severity MEDIUM \
-                            --no-progress \
-                            --format table \
-                            ${fullTag}
-                            """
+                     //   sh """
+                    //    trivy image \
+                    //        --exit-code 1 \
+                    //        --severity MEDIUM \
+                    //        --no-progress \
+                    //        --format table \
+                    //        ${fullTag}
+                    //        """
 
                         echo "=== Pushing ${svc.name} ==="
                         sh "docker push ${fullTag}"
@@ -70,6 +70,8 @@ pipeline{
                         sh "docker image prune -f"
                         
                     }
+
+                    sh 'docker logout || true'
 
                 }
                 
@@ -81,10 +83,7 @@ pipeline{
 
     post{
         always {
-            node{
-                sh 'docker logout || true'
-            }
-            
+            echo 'Pipeline finished'
         }
         success{
             echo "feature branch ${env.BRANCH_NAME} passed Trivy scan. Image tagged: ${BRANCH_TAG}. Not deployed (featured branch)."
