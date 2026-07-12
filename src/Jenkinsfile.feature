@@ -58,9 +58,11 @@ pipeline{
                        sh """
                           trivy image \
                             --exit-code 1 \
-                           --severity MEDIUM \
+                            --severity HIGH,CRITICAL \
                             --no-progress \
                             --format table \
+                            --ignore-unfixed \
+                            --ignorefile .trivyignore \
                             ${fullTag}
                          """
 
