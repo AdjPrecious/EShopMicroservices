@@ -62,7 +62,7 @@ pipeline{
                             --no-progress \
                             --format table \
                             --ignore-unfixed \
-                            --ignorefile .trivyignore \
+                            
                             ${fullTag}
                          """
 
