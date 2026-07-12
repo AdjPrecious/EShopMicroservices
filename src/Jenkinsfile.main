@@ -65,8 +65,6 @@ pipeline {
                              --severity HIGH \
                              --no-progress \
                              --format table \
-                             --ignore-unfixed \
-                             
                             ${fullTag}
                          """
 
