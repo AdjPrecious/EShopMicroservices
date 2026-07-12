@@ -20,18 +20,18 @@ pipeline {
             
         }
 
-        // stage('Install Trivy') {
-        //    steps {
-        //        sh '''
-         //           if ! command -v trivy &> /dev/null; then
-        //                echo "Installing Trivy..."
-        //                curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-        //            else
-        //                echo "Trivy already installed: $(trivy --version)"
-        //            fi
-        //        '''
-        //    }
-        //}
+        stage('Install Trivy') {
+            steps {
+                sh '''
+                   if ! command -v trivy &> /dev/null; then
+                        echo "Installing Trivy..."
+                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                    else
+                        echo "Trivy already installed: $(trivy --version)"
+                    fi
+                '''
+            }
+        }
 
 
         stage('Build, Scan & push Docker image'){
@@ -56,16 +56,15 @@ pipeline {
                         echo "=== Building ${svc.name}.... ===="
                         sh "docker build -f ${svc.dockerfile} -t ${fullTag} src"
 
-                       // echo "=== Scanning ${svc.name} with Trivy ==="
-                        //sh """
-                        //   trivy image \
-                        //     --exit-code 1 \
-                         //    --severity HIGH \
-                        //     --no-progress \
-                        //     --format table \
-                        //     ${fullTag}
-
-                       // """
+                        echo "=== Scanning ${svc.name} with Trivy ==="
+                        sh """
+                           trivy image \
+                             --exit-code 1 \
+                             --severity HIGH \
+                             --no-progress \
+                             --format table \
+                            ${fullTag}
+                         """
 
                         echo "=== Pushing ${svc.name}.... ==="
                         sh "docker push ${fullTag}"
