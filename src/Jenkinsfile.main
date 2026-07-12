@@ -20,15 +20,17 @@ pipeline {
             
         }
 
-        stage('Install Trivy') {
+        stage('Verify Tools') {
             steps {
                 sh '''
-                   if ! command -v trivy &> /dev/null; then
-                        echo "Installing Trivy..."
-                        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-                    else
-                        echo "Trivy already installed: $(trivy --version)"
-                    fi
+                   echo "=== Trivy ===" 
+                    trivy --version
+
+                    echo "=== Hadolint ==="
+                    hadolint --version
+                    
+                    echo "=== Docker ==="
+                    docker --version
                 '''
             }
         }
