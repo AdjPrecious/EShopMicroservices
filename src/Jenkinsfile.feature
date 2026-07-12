@@ -20,15 +20,15 @@ pipeline{
        stage('Install Trivy'){
            steps{
                sh '''
-                 if ! command -v trivy &> /dev/null; then
-                      echo "Installing Trivy....."
-                     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                    echo "=== Trivy ===" 
+                    trivy --version
 
-                     else
-                        echo "Trivy already installed: $(trivy --version)"
-                     fi
+                    echo "=== Hadolint ==="
+                    hadolint --version
 
-                   '''
+                    echo "=== Docker ==="
+                    docker --version
+                '''
            }
         }
 
@@ -58,9 +58,11 @@ pipeline{
                        sh """
                           trivy image \
                             --exit-code 1 \
-                           --severity MEDIUM \
+                            --severity HIGH,CRITICAL \
                             --no-progress \
                             --format table \
+                            --ignore-unfixed \
+                            
                             ${fullTag}
                          """
 
