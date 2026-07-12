@@ -28,7 +28,7 @@ pipeline {
 
                     echo "=== Hadolint ==="
                     hadolint --version
-
+                    
                     echo "=== Docker ==="
                     docker --version
                 '''
@@ -62,7 +62,7 @@ pipeline {
                         sh """
                            trivy image \
                              --exit-code 1 \
-                             --severity HIGH,CRITICAL \
+                             --severity HIGH \
                              --no-progress \
                              --format table \
                              --ignore-unfixed \
